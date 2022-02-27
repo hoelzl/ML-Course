@@ -30,24 +30,20 @@ class Config(BaseSettings):
         self.model_dir_path.mkdir(parents=True, exist_ok=True)
 
     class Config:
-        env_prefix = "MLP_"
         fields = {
-            "data_dir_path": {
-                "env": "DATA_DIR",
+            "data_dir_path":  {
+                "env": "MLCOURSE_DATA_DIR",
             },
             "model_dir_path": {
-                "env": "MODEL_DIR",
+                "env": "MLCOURSE_MODEL_DIR",
             },
-            "logfile": {
-                "env": "LOGFILE",
+            "logfile":        {
+                "env": "MLCOURSE_LOGFILE",
             },
-            "loglevel": {
-                "env": "LOGLEVEL",
+            "loglevel":       {
+                "env": "MLCOURSE_LOGLEVEL",
             },
-            "max_processes": {
-                "env": "MAX_PROCESSES",
+            "max_processes":  {
+                "env": "MLCOURSE_MAX_PROCESSES",
             },
         }
-
-
-# %%

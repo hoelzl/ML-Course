@@ -17,6 +17,7 @@ dependencies:
   - fastapi
   - graphviz
   - ipykernel
+  - kaggle
   - ftfy
   - mypy
   - jinja2
