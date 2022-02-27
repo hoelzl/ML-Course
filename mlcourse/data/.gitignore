@@ -1,0 +1,12 @@
+# Ignore everything in this directory
+*
+**/
+
+# Except this file and .gitignore in sub directories...
+!.gitignore
+!**/.gitignore
+
+# As well as some selected files
+!generators
+!generators/*
+!__init__.py
