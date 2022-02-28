@@ -8,6 +8,7 @@ channels:
   - defaults
 dependencies:
   - python[version='>=3.9']
+  # Delete the following two lines on a Mac
   - cuda
   - cudnn
   - autopep8

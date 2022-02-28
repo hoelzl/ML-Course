@@ -37,7 +37,6 @@ dls.show_batch()
 
 # %%
 learn = cnn_learner(dls, resnet34, metrics=error_rate)
-learn.dls = create_dls()
 
 # %%
 learn.fine_tune(1)
