@@ -7,7 +7,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.13.7
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -18,7 +18,7 @@
 # The module `mlcourse.data.generators.fake_salary` contains a number of synthetic datasets
 # that represent salary as a function of ages and education level, or ages and profession.
 #
-# Analyze how `linear_salaries`, `stepwise_salaries`, `interpolated_salaries` and `multivar_salaries` depend on `ages` and `education_levels` and train regression saved_models (at least linear and decision tree saved_models) that model these dependencies.
+# Analyze how `linear_salaries`, `stepwise_salaries`, `interpolated_salaries` and `multivar_salaries` depend on `ages` and `education_levels` and train regression models (at least linear and decision tree models) that model these dependencies.
 #
 # Do the same for `multidist_ages`, `professions`, and `multidist_salaries`.
 #
@@ -51,14 +51,5 @@ ages.shape, education_levels.shape
  stepwise_salaries.shape,
  interpolated_salaries.shape,
  multivar_salaries.shape)
-
-# %%
-plt.scatter(ages[:500], linear_salaries[:500], alpha=0.25);
-
-# %%
-multidist_ages.shape, professions.shape, multidist_salaries.shape
-
-# %%
-plt.scatter(multidist_ages, multidist_salaries, alpha=0.25);
 
 # %%

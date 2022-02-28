@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic.env_settings import BaseSettings
 
 import mlcourse.data as mlp_data
-import mlcourse.saved_models as mlp_models
+import mlcourse.data.saved_models as mlp_models
 
 
 # %%

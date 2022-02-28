@@ -7,8 +7,9 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.13.7
 #   kernelspec:
-#     display_name: 'Python 3.8.8 64-bit (''ml-for-programmers'': conda)'
-#     name: python388jvsc74a57bd00ebdac6edb04ced203e28108b1913616e61e9b7d3113d3d6a5188f5b37078e6b
+#     display_name: Python 3 (ipykernel)
+#     language: python
+#     name: python3
 # ---
 
 # %% [markdown] slideshow={"slide_type": "slide"}
@@ -453,17 +454,17 @@ plot_regressions([dt1, dt2, dt3], fun);
 
 # %% slideshow={"slide_type": "subslide"}
 dt1_mae = evaluate_non_random_regressor(
-    DecisionTreeRegressor, fun, max_depth=1, criterion="mae"
+    DecisionTreeRegressor, fun, max_depth=1, criterion="absolute_error"
 )
 
 # %% slideshow={"slide_type": "subslide"}
 dt2_mae = evaluate_non_random_regressor(
-    DecisionTreeRegressor, fun, max_depth=2, criterion="mae"
+    DecisionTreeRegressor, fun, max_depth=2, criterion="absolute_error"
 )
 
 # %% slideshow={"slide_type": "subslide"}
 dt3_mae = evaluate_non_random_regressor(
-    DecisionTreeRegressor, fun, max_depth=3, criterion="mae"
+    DecisionTreeRegressor, fun, max_depth=3, criterion="absolute_error"
 );
 
 # %% slideshow={"slide_type": "subslide"}
@@ -665,11 +666,11 @@ evaluate_regressor(DecisionTreeRegressor, fun, max_depth=2)
 evaluate_regressor(DecisionTreeRegressor, fun, max_depth=3)
 
 # %% slideshow={"slide_type": "subslide"}
-evaluate_regressor(DecisionTreeRegressor, fun, max_depth=2, criterion="mae")
+evaluate_regressor(DecisionTreeRegressor, fun, max_depth=2, criterion="absolute_error")
 
 # %% slideshow={"slide_type": "subslide"}
 # evaluate_regressor(DecisionTreeRegressor, fun, max_leaf_nodes=20)
-evaluate_regressor(DecisionTreeRegressor, fun, max_leaf_nodes=20, criterion="mae")
+evaluate_regressor(DecisionTreeRegressor, fun, max_leaf_nodes=20, criterion="absolute_error")
 
 # %% slideshow={"slide_type": "subslide"}
 evaluate_regressor(DecisionTreeRegressor, fun, min_samples_split=16)

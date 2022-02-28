@@ -7,8 +7,9 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.13.7
 #   kernelspec:
-#     display_name: 'Python 3.8.8 64-bit (''ml-for-programmers'': conda)'
-#     name: python388jvsc74a57bd00ebdac6edb04ced203e28108b1913616e61e9b7d3113d3d6a5188f5b37078e6b
+#     display_name: Python 3 (ipykernel)
+#     language: python
+#     name: python3
 # ---
 
 # %% [markdown] slideshow={"slide_type": "slide"}
@@ -188,7 +189,7 @@ evaluate_non_random_regressor(RandomForestRegressor, fun, random_state=42);
 
 # %% slideshow={"slide_type": "subslide"}
 evaluate_non_random_regressor(
-    RandomForestRegressor, fun, n_estimators=25, criterion="mae", random_state=42
+    RandomForestRegressor, fun, n_estimators=25, criterion="absolute_error", random_state=42
 );
 
 # %% slideshow={"slide_type": "subslide"}
@@ -236,15 +237,15 @@ evaluate_non_random_regressor(GradientBoostingRegressor, fun);
 evaluate_regressor(GradientBoostingRegressor, lin);
 
 # %% slideshow={"slide_type": "subslide"}
-evaluate_regressor(GradientBoostingRegressor, lin, n_estimators=200, learning_rate=0.05, loss="lad");
+evaluate_regressor(GradientBoostingRegressor, lin, n_estimators=200, learning_rate=0.05, loss="absolute_error");
 
 # %% slideshow={"slide_type": "subslide"}
 evaluate_regressor(GradientBoostingRegressor, lin, n_estimators=500, learning_rate=0.01,
-                   loss="lad", subsample=0.1, random_state=46);
+                   loss="absolute_error", subsample=0.1, random_state=46);
 
 # %% slideshow={"slide_type": "subslide"}
 evaluate_regressor(GradientBoostingRegressor, fun, n_estimators=500, learning_rate=0.01,
-                   loss="lad", subsample=0.1, random_state=44);
+                   loss="absolute_error", subsample=0.1, random_state=44);
 
 # %% [markdown] slideshow={"slide_type": "slide"}
 # ### Multiple Features
