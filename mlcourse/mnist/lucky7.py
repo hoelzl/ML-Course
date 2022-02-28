@@ -69,9 +69,11 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 # %%
 plt.imshow(first_digit_image, cmap="binary")
+plt.show()
 
 # %%
 plt.imshow(second_digit_image, cmap="binary")
+plt.show()
 
 # %%
 y[:2]

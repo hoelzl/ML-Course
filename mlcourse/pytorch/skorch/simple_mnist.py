@@ -5,6 +5,7 @@
 # Skorch is a library for PyTorch that simplifies training in a Scikit Learn
 
 # %%
+import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 import torch.nn as nn
@@ -20,8 +21,19 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from skorch import NeuralNetClassifier
 
+from mlcourse.config import Config
+
+# %%
+config = Config()
+mnist_pkl_path = config.data_dir_path / "external/mnist.pkl"
+
 # %%
 np.set_printoptions(precision=1)
+
+# %%
+if mnist_pkl_path.exists():
+    with open(mnist_pkl_path, "rb") as file:
+        mnist = pickle.load(file)
 
 # %%
 mnist = globals().get("mnist") or fetch_openml("mnist_784", version=1)

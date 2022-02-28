@@ -23,7 +23,7 @@ raw_dir_path.absolute()
 
 
 # %% [markdown]
-# ### Aus einem NumPy Array
+# ### From a NumPy Array
 
 # %%
 def create_data_frame():

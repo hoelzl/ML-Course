@@ -49,7 +49,7 @@ display(linear_salaries[:3])
 display(linear_salaries[-3:])
 
 # %%
-display(linear_salaries[1])
+display(linear_salaries.iloc[1])
 
 # %%
 print(type(linear_salaries["age"]))
@@ -78,4 +78,7 @@ display(linear_salaries[["salary", "age"]].index)
 display(linear_salaries[["salary", "age"]].columns)
 
 
-# %%
+# %% [markdown]
+#
+# Show how to display the different salary tables using the methods from
+# `data/generators/fake_salary.py`

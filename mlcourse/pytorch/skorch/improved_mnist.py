@@ -6,6 +6,7 @@
 
 # %%
 import joblib
+import pickle
 import numpy as np
 import torch
 import torch.nn as nn
@@ -28,8 +29,14 @@ from mlcourse.config import Config
 
 # %%
 config = Config()
+mnist_pkl_path = config.data_dir_path / "external/mnist.pkl"
 model_path = config.data_dir_path / "saved_models"
 model_path.mkdir(parents=True, exist_ok=True)
+
+# %%
+if mnist_pkl_path.exists():
+    with open(mnist_pkl_path, "rb") as file:
+        mnist = pickle.load(file)
 
 # %%
 np.set_printoptions(precision=1)

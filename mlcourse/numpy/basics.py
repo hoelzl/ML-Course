@@ -38,6 +38,7 @@ def vector_sum(v1, v2):
 # %%
 vector_sum(lst1, lst2)
 
+
 # %%
 # %%timeit
 vector_sum(lst1, lst2)

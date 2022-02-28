@@ -1,5 +1,17 @@
 # %%
 from sklearn.datasets import fetch_openml
+import pickle
+
+from mlcourse.config import Config
+
+# %%
+config = Config()
+f_mnist_pkl_path = config.data_dir_path / "external/f_mnist.pkl"
+
+# %%
+if f_mnist_pkl_path.exists():
+    with open(f_mnist_pkl_path, "rb") as file:
+        f_mnist = pickle.load(file)
 
 # %%
 f_mnist = (
@@ -70,9 +82,11 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 # %%
 plt.imshow(first_item_image, cmap="binary")
+plt.show()
 
 # %%
 plt.imshow(second_digit_image, cmap="binary")
+plt.show()
 
 # %%
 y[:2]
@@ -100,6 +114,10 @@ def show_item(index):
 
 
 # %%
+show_item(0)
+
+
+# %%
 def show_items_with_label(label, num_items=3):
     items_shown = 0
     for i in range(len(y)):
@@ -111,10 +129,17 @@ def show_items_with_label(label, num_items=3):
 
 
 # %%
+show_items_with_label(1)
+
+
+# %%
 def show_all_item_kinds():
     for label in range(10):
         show_items_with_label(label)
 
+
+# %%
+show_all_item_kinds()
 
 # %%
 trousers_train = y_train == 1
@@ -125,6 +150,7 @@ trousers_test[:3], y_test[:3]
 
 # %%
 plt.imshow(x_test[0].reshape(28, 28), cmap="binary")
+plt.show()
 
 # %%
 from sklearn.linear_model import SGDClassifier  # noqa: E402

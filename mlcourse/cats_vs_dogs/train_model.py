@@ -13,7 +13,7 @@ import torch
 import torch.utils.data
 import torch.nn as nn
 import torch.optim as optim
-from skorch.callbacks import LRScheduler
+from skorch.callbacks import LRScheduler, EpochScoring, Checkpoint
 from torch.optim import lr_scheduler
 import torch.backends.cudnn as cudnn
 import torchvision
@@ -93,16 +93,12 @@ assert dogs_vs_cats_path.exists()
 dogs_vs_cats_datasets = {
     tv: datasets.ImageFolder(root=dogs_vs_cats_path, transform=data_transforms[tv],
                              is_valid_file=ImageValidator(n_min, n_max)) for
-    (tv, n_min, n_max) in [("train", 0, 1999), ("val", 2000, 2999)]}
-
-# %%
-if session.is_interactive:
-    print("Dataset length:", len(dogs_vs_cats_datasets["train"]))
+    (tv, n_min, n_max) in [("train", 0, 499), ("val", 2000, 2999)]}
 
 # %%
 dogs_vs_cats_dataloaders = {
     tv: torch.utils.data.DataLoader(dogs_vs_cats_datasets[tv], batch_size=batch_size,
-                                    shuffle=True, num_workers=config.max_processes)
+                                    shuffle=True, pin_memory=True)
     for tv in ["train", "val"]}
 
 # %%
@@ -160,12 +156,12 @@ show_first_image_batch("train")
 show_first_image_batch("val")
 
 # %%
-model_resnet = models.resnet18(pretrained=True)
+model_resnet = models.resnet50(pretrained=True)
 
 # %%
 # Freeze the model parameters for the initial training pass:
-for param in model_resnet.parameters():
-    param.requires_grad = False
+# for param in model_resnet.parameters():
+#     param.requires_grad = False
 
 # %%
 if session.is_interactive:
@@ -182,31 +178,29 @@ model_resnet.fc = nn.Linear(num_features, 2)
 if session.is_interactive:
     print(summary(model_resnet, first_image_batch["train"][0]))
 
-# %%
-# criterion = nn.CrossEntropyLoss()
-# optimizer_resnet = optim.SGD(model_resnet.parameters(), lr=0.001, momentum=0.9)
-# exp_lr_scheduler = lr_scheduler.StepLR(optimizer_resnet, step_size=2, gamma=0.1)
 
 # %%
-num_epochs = 30
+num_epochs = 10
+model_dir = config.data_dir_path / "models"
 
 # %%
 resnet_net = NeuralNet(
     model_resnet,
     criterion=nn.CrossEntropyLoss,
     max_epochs=num_epochs,
-    train_split=None,
     device=device,
     optimizer=optim.SGD,
     optimizer__lr=1e-6,
     optimizer__momentum=0.9,
-    callbacks=[(
-        "lr_scheduler",
-        LRScheduler(policy=lr_scheduler.OneCycleLR, max_lr=1e-4, epochs=num_epochs,
-                    steps_per_epoch=len(dogs_vs_cats_datasets["train"]))
-        #     LRScheduler(policy=lr_scheduler.StepLR, step_size=1, gamma=0.75)
-        #     LRScheduler(policy=lr_scheduler.ReduceLROnPlateau, patience=4)
-    )]
+    callbacks=[
+        ("lr_scheduler",
+         LRScheduler(policy=lr_scheduler.OneCycleLR, max_lr=1e-4, epochs=num_epochs,
+                     steps_per_epoch=len(dogs_vs_cats_datasets["train"]))),
+        ("acc-score",
+         EpochScoring("accuracy", name="accuracy", on_train=True)),
+        ("checkpoint",
+         Checkpoint(dirname=model_dir.as_posix()))
+    ]
 )
 
 # %%

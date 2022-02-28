@@ -20,6 +20,7 @@ mnist.data.to_numpy().shape
 x = mnist.data.to_numpy().reshape(-1, 28, 28).astype(np.int32)
 y = mnist.target.to_numpy().astype(np.int32)
 
+
 # %%
 def show_labeled_image(index):
     plt.imshow(x[index], cmap="binary")
@@ -54,6 +55,7 @@ x_mean.shape
 # %%
 if session.is_interactive:
     plt.imshow(x_mean, cmap="binary")
+    plt.show()
 
 # %%
 ideal_digits = np.zeros((10, 28, 28), dtype=np.int32)
@@ -65,17 +67,19 @@ for i in range(10):
 
 # %%
 plt.imshow(ideal_digits[0], cmap="binary")
+plt.show()
 
 # %%
 if session.is_interactive:
     fig, ax = plt.subplots(2, 5, figsize=(15, 5))
     for i in range(10):
         ax.reshape(10)[i].imshow(ideal_digits[i], cmap="binary")
-
+    plt.show()
 
 # %%
 if session.is_interactive:
     plt.imshow(x_test[0], cmap="binary")
+    plt.show()
 
 # %%
 np.set_printoptions(precision=2)
@@ -105,6 +109,7 @@ errors = (diffs * diffs).sum(axis=(1, 2))
 print(errors.shape)
 errors.argmin()
 
+
 # %%
 def compute_single_numpy_prediction(img):
     diffs = ideal_digits - img
@@ -120,6 +125,7 @@ batched_ideal_digits.shape
 
 # %%
 np.expand_dims(x_test, axis=1).shape
+
 
 # %%
 def compute_numpy_predictions(imgs):
@@ -154,9 +160,10 @@ print_scores(pred_numpy)
 # %%
 if session.is_interactive:
     plt.imshow(x_mean, cmap="binary")
+    plt.show()
 
 # %%
-rf_clf = RandomForestClassifier()
+rf_clf = RandomForestClassifier(n_jobs=32)
 
 # %%
 x_train.shape
