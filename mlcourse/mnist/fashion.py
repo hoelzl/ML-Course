@@ -6,7 +6,7 @@ from mlcourse.config import Config
 
 # %%
 config = Config()
-f_mnist_pkl_path = config.data_dir_path / "external/f_mnist.pkl"
+f_mnist_pkl_path = config.data_dir_path / "external/f_mnist_2.pkl"
 
 # %%
 if f_mnist_pkl_path.exists():
@@ -17,6 +17,11 @@ if f_mnist_pkl_path.exists():
 f_mnist = (
     globals()["f_mnist"] if "f_mnist" in globals() else fetch_openml(data_id=40996)
 )
+
+# %%
+# f_mnist = fetch_openml(data_id=40996)
+# with open(f_mnist_pkl_path, "wb") as file:
+#     pickle.dump(f_mnist, file)
 
 # %%
 type(f_mnist)
