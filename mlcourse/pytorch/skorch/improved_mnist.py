@@ -136,7 +136,10 @@ search_clf = NeuralNetClassifier(
 # %%
 search = RandomizedSearchCV(
     search_clf,
-    n_iter=25,
+    n_iter=3, # In reality this should be much higher...
+    cv=2,
+    verbose=3,
+    n_jobs=8,
     param_distributions=[
         {
             "module__kernels_1": [5, 10, 20],
@@ -152,20 +155,20 @@ search = RandomizedSearchCV(
             "callbacks__lr_scheduler__base_lr": [0.25, 0.1, 0.05],
             "callbacks__lr_scheduler__max_lr": [0.5],
         },
-        {
-            "module__kernels_1": [5, 10, 20],
-            "module__kernels_2": [15, 30, 60],
-            "module__hidden": [60, 120, 360],
-            "callbacks__lr_scheduler__base_lr": [0.1, 0.05],
-            "callbacks__lr_scheduler__max_lr": [0.25, 0.15],
-        },
-        {
-            "module__kernels_1": [30, 60],
-            "module__kernels_2": [60, 120, 240],
-            "module__hidden": [360, 720],
-            "callbacks__lr_scheduler__base_lr": [0.1, 0.05],
-            "callbacks__lr_scheduler__max_lr": [0.25, 0.15],
-        },
+        # {
+        #     "module__kernels_1": [5, 10, 20],
+        #     "module__kernels_2": [15, 30, 60],
+        #     "module__hidden": [60, 120, 360],
+        #     "callbacks__lr_scheduler__base_lr": [0.1, 0.05],
+        #     "callbacks__lr_scheduler__max_lr": [0.25, 0.15],
+        # },
+        # {
+        #     "module__kernels_1": [30, 60],
+        #     "module__kernels_2": [60, 120, 240],
+        #     "module__hidden": [360, 720],
+        #     "callbacks__lr_scheduler__base_lr": [0.1, 0.05],
+        #     "callbacks__lr_scheduler__max_lr": [0.25, 0.15],
+        # },
     ],
 )
 
