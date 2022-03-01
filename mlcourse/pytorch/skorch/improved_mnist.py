@@ -1,8 +1,4 @@
 # %% [markdown]
-#
-# # Trainin Neural Networks using Skorch
-#
-# Skorch is a library for PyTorch that simplifies training in a Scikit Learn
 
 # %%
 import joblib
@@ -13,13 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from pytorch_model_summary import summary
 from sklearn.datasets import fetch_openml
-from sklearn.metrics import (
-    accuracy_score,
-    balanced_accuracy_score,
-    f1_score,
-    precision_score,
-    recall_score,
-)
+from sklearn.metrics import classification_report
 from sklearn.model_selection import RandomizedSearchCV, train_test_split
 from skorch import NeuralNetClassifier
 from skorch.callbacks import LRScheduler
@@ -34,12 +24,12 @@ model_path = config.data_dir_path / "saved_models"
 model_path.mkdir(parents=True, exist_ok=True)
 
 # %%
+np.set_printoptions(precision=1)
+
+# %%
 if mnist_pkl_path.exists():
     with open(mnist_pkl_path, "rb") as file:
         mnist = pickle.load(file)
-
-# %%
-np.set_printoptions(precision=1)
 
 # %%
 mnist = globals().get("mnist") or fetch_openml("mnist_784", version=1)
@@ -55,17 +45,6 @@ y = mnist.target.to_numpy().astype(np.int64)
 x_train, x_test, y_train, y_test = train_test_split(
     x, y, test_size=10_000, random_state=42
 )
-
-
-# %%
-def print_scores(y, y_pred):
-    print(f"Accuracy:          {accuracy_score(y, y_pred) * 100:.1f}%")
-    print(f"Balanced accuracy: {balanced_accuracy_score(y, y_pred) * 100:.1f}%")
-    print(
-        f"Precision (macro): {precision_score(y, y_pred, average='macro') * 100:.1f}%"
-    )
-    print(f"Recall (macro):    {recall_score(y, y_pred, average='macro') * 100:.1f}%")
-    print(f"F1 (macro):        {f1_score(y, y_pred, average='macro') * 100:.1f}%")
 
 
 # %%
@@ -111,19 +90,19 @@ conv_1_clf.fit(x_train, y_train)
 y_pred_conv_1 = conv_1_clf.predict(x_test)
 
 # %%
-print_scores(y_test, y_pred_conv_1)
+print(classification_report(y_test, y_pred_conv_1))
 
 # %%
 conv_2_clf = NeuralNetClassifier(
     ConvNet,
-    max_epochs=20,
+    max_epochs=25,
     lr=0.1,
     iterator_train__shuffle=True,
     module__kernels_1=16,
     module__kernels_2=32,
     module__hidden=128,
     callbacks=[
-        ("lr_scheduler", LRScheduler(policy=CyclicLR, base_lr=0.05, max_lr=0.15))
+        ("lr_scheduler", LRScheduler(policy=CyclicLR, base_lr=0.01, max_lr=0.2))
     ],
     device=device,
     verbose=True,
@@ -139,7 +118,7 @@ conv_2_clf.fit(
 y_pred_conv_2 = conv_2_clf.predict(x_test)
 
 # %%
-print_scores(y_test, y_pred_conv_2)
+print(classification_report(y_test, y_pred_conv_2))
 
 # %%
 search_clf = NeuralNetClassifier(
@@ -201,7 +180,7 @@ search.best_estimator_, search.best_params_
 y_pred_search = search.predict(x_test)
 
 # %%
-print_scores(y_test, y_pred_search)
+print(classification_report(y_test, y_pred_search))
 
 # %%
 model_file = model_path / "mnist_conv_randomized_search.pkl"
@@ -216,6 +195,6 @@ search_loaded = joblib.load(model_file)
 y_pred_loaded = search_loaded.predict(x_test)
 
 # %%
-print_scores(y_test, y_pred_loaded)
+print(classification_report(y_test, y_pred_loaded))
 
 # %%

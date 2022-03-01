@@ -22,11 +22,11 @@ from mlcourse.cats_vs_dogs.download_data import (
     train_path,
 )
 from mlcourse.config import Config
-from nbex.interactive import session
+from nbex.interactive import session, display
 from PIL import Image
 from torchvision import datasets, models, transforms
 from pytorch_model_summary import summary
-from skorch.callbacks import Checkpoint, EpochScoring, Freezer, LRScheduler
+from skorch.callbacks import Checkpoint, EpochScoring, Freezer, LRScheduler, Unfreezer
 from torch.optim import lr_scheduler
 from torchvision import datasets, models, transforms
 
@@ -57,11 +57,13 @@ net_std = [0.229, 0.224, 0.225]
 # %%
 train_transform = transforms.Compose(
     [
+        transforms.RandomAffine(degrees=10.0),
         # Probably more common for Interception based networks, but should work
         # for resnet as well.
         transforms.RandomResizedCrop((224, 224), scale=(0.8, 1.0), ratio=(0.8, 1.2)),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
         transforms.Normalize(net_mean, net_std),
     ]
 )
@@ -131,7 +133,7 @@ train_ds = datasets.ImageFolder(
 val_ds = datasets.ImageFolder(
     root=dogs_vs_cats_path,
     transform=val_transform,
-    is_valid_file=ImageFilter(2000, 2499),
+    is_valid_file=ImageFilter(2000, 2999),
 )
 
 # %%
@@ -154,7 +156,7 @@ if session.is_interactive:
 
 # %%
 class CatsVsDogsModel(nn.Module):
-    def __init__(self, num_output_features, model_type=models.resnet18) -> None:
+    def __init__(self, num_output_features, model_type=models.resnet50) -> None:
         super().__init__()
         model = model_type(pretrained=True)
         num_fc_inputs = model.fc.in_features
@@ -176,7 +178,7 @@ if session.is_interactive:
     )
 
 # %%
-lr_scheduler_ = LRScheduler(policy="StepLR", step_size=7, gamma=0.1)
+lr_scheduler_ = LRScheduler(policy="StepLR", step_size=5, gamma=0.1)
 
 # %%
 checkpoint = Checkpoint(
@@ -187,11 +189,14 @@ checkpoint = Checkpoint(
 
 # %%
 def is_fc_layer(name: str):
-    lambda x: not x.startswith("model.fc")
+    return not name.startswith("model.fc")
 
 
 # %%
-freezer = Freezer(is_fc_layer)
+freezer = Freezer(patterns=is_fc_layer)
+
+# %%
+unfreezer = Unfreezer(patterns="*", at=1)
 
 # %%
 net = NeuralNetClassifier(
@@ -205,11 +210,31 @@ net = NeuralNetClassifier(
     optimizer__momentum=0.9,
     iterator_train__shuffle=True,
     train_split=predefined_split(val_ds),
-    callbacks=[lr_scheduler_, checkpoint, freezer],
+    callbacks=[lr_scheduler_, checkpoint, freezer, unfreezer],
     device=device,
 )
 
 # %%
 net.fit(train_ds, y=None)
+
+# %%
+if session.is_interactive:
+    print(len(net.history_))
+
+# %%
+if session.is_interactive:
+    display(net.history_)
+
+# %%
+if session.is_interactive:
+    print(
+        summary(
+            net.module_,
+            torch.unsqueeze(next(iter(train_ds))[0], 0).to(device),
+            show_hierarchical=True,
+        )
+    )
+
+# %%
 
 # %%

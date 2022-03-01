@@ -2,7 +2,8 @@
 #
 # # Training Neural Networks using Skorch
 #
-# Skorch is a library for PyTorch that simplifies training in a Scikit Learn
+# Skorch is a library for PyTorch that simplifies training in a Scikit
+# Learn-like fashion
 
 # %%
 import pickle
@@ -10,13 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch.nn as nn
 from sklearn.datasets import fetch_openml
-from sklearn.metrics import (
-    accuracy_score,
-    balanced_accuracy_score,
-    f1_score,
-    precision_score,
-    recall_score,
-)
+from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from skorch import NeuralNetClassifier
@@ -122,25 +117,40 @@ y_pred_mlp = mlp_clf.predict(x_test)
 
 
 # %%
-def print_scores(y, y_pred):
-    print(f"Accuracy:          {accuracy_score(y, y_pred) * 100:.1f}%")
-    print(f"Balanced accuracy: {balanced_accuracy_score(y, y_pred) * 100:.1f}%")
-    print(
-        f"Precision (macro): {precision_score(y, y_pred, average='macro') * 100:.1f}%"
-    )
-    print(f"Recall (macro):    {recall_score(y, y_pred, average='macro') * 100:.1f}%")
-    print(f"F1 (macro):        {f1_score(y, y_pred, average='macro') * 100:.1f}%")
-
+print(classification_report(y_test, y_pred_mlp))
 
 # %%
-print_scores(y_test, y_pred_mlp)
+print(confusion_matrix(y_test, y_pred_mlp))
+
+# %%
+plt.figure(figsize=(10, 8))
+ax = plt.axes()
+ConfusionMatrixDisplay.from_predictions(y_test, y_pred_mlp, ax=ax)
+
+# %%
+plt.figure(figsize=(14, 12))
+ax = plt.axes()
+ConfusionMatrixDisplay.from_predictions(y_test, y_pred_mlp, normalize="true", ax=ax)
+
+# %%
+plt.figure(figsize=(14, 12))
+ax = plt.axes()
+ConfusionMatrixDisplay.from_predictions(y_test, y_pred_mlp, normalize="pred", ax=ax)
+
+# %%
+plt.figure(figsize=(14, 12))
+ax = plt.axes()
+ConfusionMatrixDisplay.from_predictions(y_test, y_pred_mlp, normalize="all", ax=ax)
+
 
 # %%
 conv_model = nn.Sequential(
-    nn.Conv2d(1, 10, kernel_size=5, stride=(2, 2)),
+    nn.Conv2d(1, 10, kernel_size=5),
     nn.ReLU(),
-    nn.Conv2d(10, 20, kernel_size=5, stride=(2, 2)),
+    nn.MaxPool2d(2),
+    nn.Conv2d(10, 20, kernel_size=5),
     nn.ReLU(),
+    nn.MaxPool2d(2),
     nn.Flatten(),
     nn.Linear(320, 60),
     nn.ReLU(),
@@ -160,6 +170,6 @@ conv_clf.fit(x_train, y_train)
 y_pred_conv = conv_clf.predict(x_test)
 
 # %%
-print_scores(y_test, y_pred_conv)
+print(classification_report(y_test, y_pred_conv))
 
 # %%
