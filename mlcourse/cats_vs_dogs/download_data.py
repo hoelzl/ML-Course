@@ -56,10 +56,6 @@ def unzip_training_data_if_necessary():
 
 
 # %%
-max_image_number = 999
-
-
-# %%
 def is_valid_image_file(path: Path) -> bool:
     is_dog_or_cat = path.stem[:3] in ["cat", "dog"]
     try:

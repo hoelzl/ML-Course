@@ -1,28 +1,35 @@
 # %%
-from pathlib import Path
 import pickle
 from enum import Enum
-from typing import Tuple, List, Dict
+from itertools import islice
+from pathlib import Path
+from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torchvision.utils
-from nbex.interactive import session
-
+from skorch import NeuralNetClassifier
+from skorch.helper import predefined_split
 import torch
-import torch.utils.data
+import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.optim as optim
-from skorch.callbacks import LRScheduler, EpochScoring, Checkpoint
-from torch.optim import lr_scheduler
-import torch.backends.cudnn as cudnn
+import torch.utils.data
 import torchvision
+import torchvision.utils
+from mlcourse import data
+from mlcourse.cats_vs_dogs.download_data import (
+    ensure_dogs_vs_cats_data_exists,
+    train_path,
+)
+from mlcourse.config import Config
+from nbex.interactive import session
+from PIL import Image
 from torchvision import datasets, models, transforms
 from pytorch_model_summary import summary
-from skorch import NeuralNet
+from skorch.callbacks import Checkpoint, EpochScoring, Freezer, LRScheduler
+from torch.optim import lr_scheduler
+from torchvision import datasets, models, transforms
 
-from mlcourse.config import Config
-from mlcourse.cats_vs_dogs.download_data import ensure_dogs_vs_cats_data_exists
 
 # %% [md]
 
@@ -41,22 +48,48 @@ ensure_dogs_vs_cats_data_exists()
 net_mean = [0.485, 0.456, 0.406]
 net_std = [0.229, 0.224, 0.225]
 
+# %% [markdown]
+#
+# See the [torchvision
+# documentation](https://pytorch.org/vision/stable/transforms.html) for a
+# description of the available transformations.
+
 # %%
-data_transforms = {
-    "train": transforms.Compose(
-        [transforms.Resize((224, 224)),
-         transforms.RandomHorizontalFlip(),
-         transforms.ToTensor(),
-         transforms.Normalize(net_mean, net_std)]),
-    "val":   transforms.Compose(
-        [transforms.Resize((224, 224)),
-         transforms.ToTensor(),
-         transforms.Normalize(net_mean, net_std)])
-}
+train_transform = transforms.Compose(
+    [
+        # Probably more common for Interception based networks, but should work
+        # for resnet as well.
+        transforms.RandomResizedCrop((224, 224), scale=(0.8, 1.0), ratio=(0.8, 1.2)),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(net_mean, net_std),
+    ]
+)
+val_transform = transforms.Compose(
+    [
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(net_mean, net_std),
+    ]
+)
+
+# %%
+sample_image_path = train_path / "cat/cat.1.jpg"
+if session.is_interactive:
+    sample_image = Image.open(sample_image_path)
+    plt.imshow(sample_image)
+
+# %%
+if session.is_interactive:
+    print(val_transform(sample_image))
+    plt.imshow(train_transform(sample_image).permute(1, 2, 0))
+    plt.show()
+    plt.imshow(val_transform(sample_image).permute(1, 2, 0))
 
 
 # %%
-class ImageValidator:
+class ImageFilter:
     def __init__(self, min_id, max_id):
         self.min_id = min_id
         self.max_id = max_id
@@ -74,224 +107,109 @@ class ImageValidator:
 
 
 # %%
-is_valid_image = ImageValidator(0, 1000)
+_filter_0_1000 = ImageFilter(0, 1000)
 
-assert is_valid_image("dog.123.jpg")
-assert is_valid_image("cat.0.png")
-assert not is_valid_image("foo.123.png")
-assert not is_valid_image("dog.100000.png")
-assert not is_valid_image("cat.abc.png")
-assert not is_valid_image("dog.123.gif")
+assert _filter_0_1000("dog.123.jpg")
+assert _filter_0_1000("cat.0.png")
+assert not _filter_0_1000("foo.123.png")
+assert not _filter_0_1000("dog.100000.png")
+assert not _filter_0_1000("cat.abc.png")
+assert not _filter_0_1000("dog.123.gif")
 
 # %%
 # We're using only the training folder, since otherwise we would need to implement a
 # second method of determining the labels.
-dogs_vs_cats_path = config.data_dir_path / "external/dogs-vs-cats/train"
+dogs_vs_cats_path = train_path
 assert dogs_vs_cats_path.exists()
 
 # %%
-dogs_vs_cats_datasets = {
-    tv: datasets.ImageFolder(root=dogs_vs_cats_path, transform=data_transforms[tv],
-                             is_valid_file=ImageValidator(n_min, n_max)) for
-    (tv, n_min, n_max) in [("train", 0, 499), ("val", 2000, 2999)]}
+train_ds = datasets.ImageFolder(
+    root=dogs_vs_cats_path,
+    transform=train_transform,
+    is_valid_file=ImageFilter(0, 1999),
+)
+val_ds = datasets.ImageFolder(
+    root=dogs_vs_cats_path,
+    transform=val_transform,
+    is_valid_file=ImageFilter(2000, 2499),
+)
 
 # %%
-dogs_vs_cats_dataloaders = {
-    tv: torch.utils.data.DataLoader(dogs_vs_cats_datasets[tv], batch_size=batch_size,
-                                    shuffle=True, pin_memory=True)
-    for tv in ["train", "val"]}
+if session.is_interactive:
+    for img, label in islice(train_ds, 2):
+        plt.imshow(img.permute(1, 2, 0))
+        plt.title(f"Label: {label}")
+        plt.show()
+    # Show some dogs as well
+    # for img, label in islice(train_ds, len(train_ds)-3, len(train_ds)-1):
+    #     plt.imshow(img.permute(1, 2, 0))
+    #     plt.title(f"Label: {label}")
+    #     plt.show()
 
 # %%
-dogs_vs_cats_sizes = {
-    tv: len(dogs_vs_cats_datasets[tv]) for tv in ["train", "val"]
-}
+class_names = train_ds.classes
+if session.is_interactive:
+    print("Class names:", class_names)
+
+
+# %%
+class CatsVsDogsModel(nn.Module):
+    def __init__(self, num_output_features, model_type=models.resnet18) -> None:
+        super().__init__()
+        model = model_type(pretrained=True)
+        num_fc_inputs = model.fc.in_features
+        model.fc = nn.Linear(num_fc_inputs, num_output_features)
+        self.model = model
+
+    def forward(self, x):
+        return self.model(x)
+
 
 # %%
 if session.is_interactive:
     print(
-        f"Dataset sizes: train = {dogs_vs_cats_sizes['train']}, val = "
-        f"{dogs_vs_cats_sizes['val']}")
+        summary(
+            CatsVsDogsModel(2),
+            torch.unsqueeze(next(iter(train_ds))[0], 0),
+            show_hierarchical=True,
+        )
+    )
 
 # %%
-class_names = dogs_vs_cats_datasets["train"].classes
+lr_scheduler_ = LRScheduler(policy="StepLR", step_size=7, gamma=0.1)
 
 # %%
-if session.is_interactive:
-    print(f"Class names: {class_names}")
-
-
-# %%
-def convert_tensor_to_image(tensor):
-    ts = tensor.numpy().transpose((1, 2, 0))
-    ts = np.clip(net_std * ts + net_mean, 0, 1)
-    return ts
-
-
-# %%
-def show_image(tensor, title="Images"):
-    img = convert_tensor_to_image(tensor)
-    plt.imshow(img)
-    plt.title(title)
-    plt.show()
-
-
-# %%
-first_image_batch = {
-    train_or_val: next(iter(dogs_vs_cats_dataloaders[train_or_val]))
-    for train_or_val in ["train", "val"]
-}
-
-
-# %%
-def show_first_image_batch(train_or_val="train"):
-    raw_tensors, classes = first_image_batch[train_or_val]
-    image_tensors = torchvision.utils.make_grid(raw_tensors)
-    show_image(image_tensors)
-
-
-# %%
-show_first_image_batch("train")
-
-# %%
-show_first_image_batch("val")
-
-# %%
-model_resnet = models.resnet50(pretrained=True)
-
-# %%
-# Freeze the model parameters for the initial training pass:
-# for param in model_resnet.parameters():
-#     param.requires_grad = False
-
-# %%
-if session.is_interactive:
-    print(summary(model_resnet, first_image_batch["train"][0], show_input=True))
-    # print(
-    #   summary(model_resnet, first_image_batch["train"][0], show_hierarchical=True))
-
-# %%
-# Replace the fully connected layer (i.e., the last layer)
-num_features = model_resnet.fc.in_features
-model_resnet.fc = nn.Linear(num_features, 2)
-
-# %%
-if session.is_interactive:
-    print(summary(model_resnet, first_image_batch["train"][0]))
-
-
-# %%
-num_epochs = 10
-model_dir = config.data_dir_path / "models"
-
-# %%
-resnet_net = NeuralNet(
-    model_resnet,
-    criterion=nn.CrossEntropyLoss,
-    max_epochs=num_epochs,
-    device=device,
-    optimizer=optim.SGD,
-    optimizer__lr=1e-6,
-    optimizer__momentum=0.9,
-    callbacks=[
-        ("lr_scheduler",
-         LRScheduler(policy=lr_scheduler.OneCycleLR, max_lr=1e-4, epochs=num_epochs,
-                     steps_per_epoch=len(dogs_vs_cats_datasets["train"]))),
-        ("acc-score",
-         EpochScoring("accuracy", name="accuracy", on_train=True)),
-        ("checkpoint",
-         Checkpoint(dirname=model_dir.as_posix()))
-    ]
+checkpoint = Checkpoint(
+    f_pickle="dogs_vs_cats.pkl",
+    dirname=config.model_dir_path.as_posix(),
+    monitor="valid_acc_best",
 )
 
 # %%
-resnet_net.fit(dogs_vs_cats_datasets["train"]);
+def is_fc_layer(name: str):
+    lambda x: not x.startswith("model.fc")
+
 
 # %%
-for param in model_resnet.parameters():
-    param.requires_grad = True
+freezer = Freezer(is_fc_layer)
 
 # %%
-if session.is_interactive:
-    print(summary(resnet_net.module_, first_image_batch["train"][0].to(device)))
+net = NeuralNetClassifier(
+    CatsVsDogsModel,
+    criterion=nn.CrossEntropyLoss,
+    lr=0.001,
+    batch_size=16,
+    max_epochs=10,
+    module__num_output_features=2,
+    optimizer=optim.SGD,
+    optimizer__momentum=0.9,
+    iterator_train__shuffle=True,
+    train_split=predefined_split(val_ds),
+    callbacks=[lr_scheduler_, checkpoint, freezer],
+    device=device,
+)
 
 # %%
-resnet_net.optimizer_.lr = 1e-6
-resnet_net.partial_fit(dogs_vs_cats_datasets["train"]);
+net.fit(train_ds, y=None)
 
 # %%
-resnet_net.optimizer_.lr = 1e-5
-resnet_net.partial_fit(dogs_vs_cats_datasets["train"]);
-
-# %%
-resnet_net.max_epochs = 15
-resnet_net.optimizer_.lr = 1e-4
-resnet_net.partial_fit(dogs_vs_cats_datasets["train"]);
-
-# %%
-resnet_net.max_epochs = 10
-resnet_net.optimizer_.lr = 1e-5
-resnet_net.partial_fit(dogs_vs_cats_datasets["train"]);
-
-# %%
-resnet_net.max_epochs = 5
-resnet_net.optimizer_.lr = 1e-6
-resnet_net.partial_fit(dogs_vs_cats_datasets["train"]);
-
-# %%
-with open(config.data_dir_path / "models/dogs-vs-cats-resnet.pkl", "wb") as file:
-    pickle.dump(resnet_net, file)
-
-# %%
-predictions = resnet_net.predict(dogs_vs_cats_datasets["val"])
-predicted_classes = np.argmax(predictions, axis=1)
-
-# %%
-if session.is_interactive:
-    print("Predictions shape:     ", predictions.shape)
-    print("Predicted classes[:10]:", predicted_classes[:10])
-    print("Predicted cats:        ", np.sum(predicted_classes))
-
-# %%
-
-
-# # %%
-# class AnimalType(str, Enum):
-#     cat = "cat"
-#     dog = "dog"
-#
-#
-# # %%
-# def classify(image: PILImage, learner: Learner) -> Tuple[AnimalType, float]:
-#     with learner.no_bar():
-#         results = learner.predict(image)
-#     _, category, probabilities = results
-#     is_a_cat = category == 1
-#     animal_type = AnimalType.cat if is_a_cat else AnimalType.dog
-#     percent = np.round(100 * probabilities)
-#     return animal_type, percent[category]
-#
-#
-# # %%
-# if session.is_interactive:
-#
-#     def evaluate_classification(images, animal_type):
-#         num_total, num_correct = 0, 0
-#         for image_file in images:
-#             image = PILImage.create(image_file)
-#             predicted_animal_type, _ = classify(image, loaded_learner)
-#             num_total += 1
-#             if predicted_animal_type == animal_type:
-#                 num_correct += 1
-#         return num_total, num_correct
-#
-#
-#     image_files = config.data_dir_path / "external/cats-vs-dogs-small/test"
-#     cat_images = (image_files / "cat").glob("cat*.jpg")
-#     dog_images = (image_files / "dog").glob("dog*.jpg")
-#
-#     num_cats, num_cats_correct = evaluate_classification(cat_images, AnimalType.cat)
-#     print(f"Classified {num_cats_correct} out of {num_cats} cat images correctly.")
-#     num_dogs, num_dogs_correct = evaluate_classification(dog_images, AnimalType.dog)
-#     print(f"Classified {num_dogs_correct} out of {num_dogs} dog images correctly.")
-#
-# # %%
