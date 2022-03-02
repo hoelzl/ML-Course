@@ -33,13 +33,76 @@
 #
 # <img src="img/ag/Figure-10-004.png" style="width: 30%; margin-left: auto; margin-right: auto;"/>
 
+# %% [markdown] slideshow={"slide_type": "subslide"}
+# ## Neuronale Netze
+#
+# <img src="img/neural-net-01.drawio.png" style="width: 30%; margin-left: auto; margin-right: auto;"/>
+
+# %% [markdown] slideshow={"slide_type": "subslide"}
+# ## Neuronale Netze
+#
+# <img src="img/neural-net-02.drawio.png" style="width: 30%; margin-left: auto; margin-right: auto;"/>
+
+# %% [markdown] slideshow={"slide_type": "subslide"}
+# ## Neuronale Netze
+#
+# <img src="img/neural-net-03.drawio.png" style="width: 30%; margin-left: auto; margin-right: auto;"/>
+
+# %% [markdown] slideshow={"slide_type": "subslide"}
+# ## Neuronale Netze
+#
+# <img src="img/neural-net-04.drawio.png" style="width: 30%; margin-left: auto; margin-right: auto;"/>
+
+# %% [markdown] slideshow={"slide_type": "subslide"}
+# ## Neuronale Netze
+#
+# <img src="img/neural-net-05.drawio.png" style="width: 30%; margin-left: auto; margin-right: auto;"/>
+
+# %% [markdown] slideshow={"slide_type": "subslide"}
+# ## Neuronale Netze
+#
+# <img src="img/neural-net-06.drawio.png" style="width: 30%; margin-left: auto; margin-right: auto;"/>
+
+# %% [markdown] slideshow={"slide_type": "subslide"}
+# ## Neuronale Netze
+#
+# <img src="img/neural-net-07.drawio.png" style="width: 30%; margin-left: auto; margin-right: auto;"/>
+
 # %% [markdown] slideshow={"slide_type": "slide"}
-# ## Aktivierungsfunktionen
+# ## Neuronale Netze und Lineare Regression
+#
+# Die Addition mit Bias entspricht genau einer linearen Regression:
 
 # %%
 import torch
 import torch.nn as nn
-import numpy as np
+
+lr = nn.Linear(1, 1)
+# lr.weight = torch.nn.Parameter(torch.tensor([1.0]), requires_grad=True)
+nn.init.constant_(lr.weight, 2.0)
+lr.weight
+
+# %%
+lr.bias
+nn.init.constant_(lr.bias, 0.5)
+# lr.bias = torch.nn.Parameter(torch.tensor(0.5), requires_grad=True)
+
+# %%
+lr(torch.tensor([2.0]))
+
+# %% slideshow={"slide_type": "subslide"}
+torch.manual_seed(2022)
+lr = nn.Linear(3, 1)
+lr
+
+# %%
+print(f"Weights: {lr.weight}, bias: {lr.bias}")
+print(f"Result: {lr(torch.tensor([1.0, 1.0, 0.0]))}")
+
+# %% [markdown] slideshow={"slide_type": "slide"}
+# ## Aktivierungsfunktionen
+
+# %%
 import matplotlib.pyplot as plt
 act_x = torch.linspace(-6, 6, 100)
 
@@ -65,10 +128,6 @@ plt.title("Combined TanH")
 plt.plot(act_x, nn.Tanh()(act_x) - 1.5 * nn.Tanh()(act_x - 2));
 
 # %% slideshow={"slide_type": "subslide"}
-import torch
-import torch.nn as nn
-
-# %%
 torch.manual_seed(2022)
 neuron = lambda x: nn.Tanh()(nn.Linear(4, 1)(x))
 
@@ -90,7 +149,7 @@ neuron(torch.tensor([1.0, 2.0, 3.0, 4.0]))
 #
 # <img src="img/ag/Figure-18-032.png" style="width: 70%; margin-left: auto; margin-right: auto;"/>
 
-# %%
+# %% slideshow={"slide_type": "subslide"}
 seq_model = nn.Sequential(
     nn.Linear(2, 4),
     nn.ReLU(),
@@ -134,21 +193,21 @@ seq_model(torch.tensor([1.0, 2.0]))
 #
 # <img src="img/ag/Figure-18-037.png" style="width: 100%; margin-left: auto; margin-right: auto; 0"/>
 
+# %% [markdown] slideshow={"slide_type": "subslide"}
+# ## Wie updaten wir die Parameter?
+#
+# <img src="img/ag/Figure-05-012.png" style="width: 35%; margin-left: auto; margin-right: auto;"/>
+
+# %% [markdown] slideshow={"slide_type": "subslide"}
+# ## Wie updaten wir die Parameter?
+#
+# <img src="img/ag/Figure-05-013.png" style="width: 60%; margin-left: auto; margin-right: auto;"/>
+
 # %% [markdown] slideshow={"slide_type": "slide"}
 # ## Wie updaten wir die Parameter?
 #
-# <img src="img/ag/Figure-05-001.png" style="float: left; width: 45%; margin-left: auto; margin-right: auto; 0"/>
-# <img src="img/ag/Figure-05-005.png" style="float: right; width: 45%; margin-left: auto; margin-right: auto; 0"/>
-
-# %% [markdown] slideshow={"slide_type": "subslide"}
-# ## Wie updaten wir die Parameter?
-#
-# <img src="img/ag/Figure-05-012.png" style="width: 35%; margin-left: auto; margin-right: auto; 0"/>
-
-# %% [markdown] slideshow={"slide_type": "subslide"}
-# ## Wie updaten wir die Parameter?
-#
-# <img src="img/ag/Figure-05-013.png" style="width: 60%; margin-left: auto; margin-right: auto; 0"/>
+# <img src="img/ag/Figure-05-001.png" style="float: left; width: 45%; margin-left: auto; margin-right: auto;"/>
+# <img src="img/ag/Figure-05-005.png" style="float: right; width: 45%; margin-left: auto; margin-right: auto;"/>
 
 # %% [markdown] slideshow={"slide_type": "slide"}
 # # MNIST
@@ -158,6 +217,7 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 import torch.nn as nn
+import matplotlib.pyplot as plt
 
 input_size = 28 * 28
 num_classes = 10
@@ -185,12 +245,12 @@ test_dataset = torchvision.datasets.MNIST(root='./data',
 it = iter(train_dataset)
 tensor, label = next(it)
 print(f"Batch shape: {tensor.shape}, label: {label}")
-plt.imshow(tensor[0], cmap="binary")
+plt.imshow(tensor[0], cmap="binary");
 
-# %%
+# %% slideshow={"slide_type": "subslide"}
 tensor, label = next(it)
 print(f"Batch shape: {tensor.shape}, label: {label}")
-plt.imshow(tensor[0], cmap="binary")
+plt.imshow(tensor[0], cmap="binary");
 
 # %%
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
@@ -208,11 +268,7 @@ def create_model(hidden_size):
     return model, optimizer
 
 
-# %%
-loss_fn = nn.CrossEntropyLoss()
-
-
-# %%
+# %% slideshow={"slide_type": "subslide"}
 def training_loop(n_epochs, optimizer, model, loss_fn, device, train_loader, print_progress=True):
     all_losses = []
     for epoch in range(1, n_epochs + 1):
@@ -240,13 +296,13 @@ def training_loop(n_epochs, optimizer, model, loss_fn, device, train_loader, pri
 
 
 # %%
-def run_training_loop(hidden_size, num_epochs=num_epochs, print_progress=True):
+def create_and_train_model(hidden_size, num_epochs=num_epochs, print_progress=True):
     model, optimizer = create_model(hidden_size)
     losses = training_loop(
         n_epochs=num_epochs,
         optimizer=optimizer,
         model=model,
-        loss_fn=loss_fn,
+        loss_fn=nn.CrossEntropyLoss(),
         device=torch.device('cpu') if torch.cuda.is_available() else torch.device('cpu'),
         train_loader=train_loader,
         print_progress=print_progress,
@@ -255,7 +311,7 @@ def run_training_loop(hidden_size, num_epochs=num_epochs, print_progress=True):
 
 
 # %%
-model, losses = run_training_loop(32, num_epochs=5, print_progress=False)
+model, losses = create_and_train_model(32, num_epochs=5, print_progress=True)
 
 # %%
 from matplotlib import pyplot
@@ -265,14 +321,15 @@ pyplot.plot(range(len(losses)), losses);
 
 # %%
 def evaluate_model(model):
-	ground_truth = []
-	predictions = []
-	with torch.no_grad():
-		for x, y in test_loader:
-			new_predictions = model(x.reshape(-1, input_size))
-			predictions.extend(new_predictions.argmax(dim=1).numpy())
-			ground_truth.extend(y.numpy())
-	return ground_truth, predictions
+    ground_truth = []
+    predictions = []
+    with torch.no_grad():
+        for x, y in test_loader:
+            new_predictions = model(x.reshape(-1, input_size))
+            predictions.extend(new_predictions.argmax(dim=1).numpy())
+            ground_truth.extend(y.numpy())
+        return ground_truth, predictions
+
 
 # %%
 from sklearn.metrics import classification_report
@@ -280,7 +337,7 @@ from sklearn.metrics import classification_report
 print(classification_report(*evaluate_model(model)))
 
 # %%
-model, losses = run_training_loop(64, print_progress=False)
+model, losses = create_and_train_model(64, print_progress=False)
 
 pyplot.figure(figsize=(16, 5))
 pyplot.plot(range(len(losses)), losses);
@@ -289,13 +346,20 @@ pyplot.plot(range(len(losses)), losses);
 print(classification_report(*evaluate_model(model)))
 
 # %%
-model, losses = run_training_loop(512, print_progress=False)
+model, losses = create_and_train_model(512, print_progress=False)
 
 pyplot.figure(figsize=(16, 5))
 pyplot.plot(range(len(losses)), losses);
 
 # %%
 print(classification_report(*evaluate_model(model)))
+
+# %% [markdown]
+# ## Workshop Fashion MNIST
+#
+# Trainieren Sie ein Neuronales Netz, dass Bilder aus dem Fashion MNIST Datenset klassifizieren kann.
+#
+# Ein Torch `Dataset` für Fashion MNIST kann mit der Klasse `torchvision.datasets.FashionMNIST` erzeugt werden.
 
 # %% [markdown] slideshow={"slide_type": "slide"}
 # ## Modelle
