@@ -18,6 +18,7 @@
 # %%
 from pickletools import optimize
 import matplotlib.pyplot as plt
+from pytorch_model_summary import summary
 import torch
 import torchvision
 import torchvision.transforms as transforms
@@ -95,6 +96,11 @@ def create_model(hidden_size):
     )
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     return model, optimizer
+
+# %%
+mlp16, _ = create_model(16)
+print(summary(mlp16, torch.zeros((100, 784)), show_input=True))
+print(summary(mlp16, torch.zeros((100, 784))))
 
 
 # %% slideshow={"slide_type": "subslide"}

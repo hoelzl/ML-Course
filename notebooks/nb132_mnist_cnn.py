@@ -26,6 +26,7 @@ import torchvision
 import torchvision.transforms as transforms
 from mlcourse.config import Config
 from mlcourse.utils.data import show_dataset
+from pytorch_model_summary import summary
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
     classification_report,
@@ -61,7 +62,22 @@ test_dataset = torchvision.datasets.MNIST(
     root="./data", train=False, transform=mnist_transforms, download=True
 )
 
-# %%
+# %% 
+partial_model = nn.Sequential(
+    nn.Conv2d(1, 10, kernel_size=5),
+    nn.ReLU(),
+    nn.MaxPool2d(2),
+    nn.Conv2d(10, 20, kernel_size=5),
+    nn.ReLU(),
+    nn.MaxPool2d(2),
+    nn.Flatten(),
+    # nn.Linear(320, 60),
+    # nn.ReLU(),
+    # nn.Linear(60, 10),
+)
+print(summary(partial_model, torch.zeros((1, 1, 28, 28)), show_input=True))
+print(summary(partial_model, torch.zeros((1, 1, 28, 28))))
+
 # %%
 conv_model = nn.Sequential(
     nn.Conv2d(1, 10, kernel_size=5),
@@ -76,6 +92,10 @@ conv_model = nn.Sequential(
     nn.Linear(60, 10),
     # nn.Softmax(dim=1),
 )
+
+# %%
+print(summary(conv_model, torch.zeros((1, 1, 28, 28))))
+print(summary(conv_model, torch.zeros((1, 1, 28, 28)), show_input=True))
 
 # %%
 cnn_classifier = NeuralNetClassifier(
