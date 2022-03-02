@@ -293,8 +293,8 @@ augmented_train_dataset = torchvision.datasets.MNIST(
 )
 
 # %%
-show_dataset(train_dataset, nrows=4, figsize=(12, 6))
-show_dataset(augmented_train_dataset, nrows=4, figsize=(12, 6))
+show_dataset(train_dataset, nrows=4, figsize=(12, 7))
+show_dataset(augmented_train_dataset, nrows=4, figsize=(12, 7))
 
 # %%
 mlp_classifier.fit(augmented_train_dataset, None)
