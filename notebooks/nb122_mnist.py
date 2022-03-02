@@ -31,11 +31,15 @@ from sklearn.metrics import (
 from skorch import NeuralNetClassifier
 from skorch.helper import predefined_split
 
+from mlcourse.utils.data import show_dataset
+
+# %%
 input_size = 28 * 28
 num_classes = 10
 num_epochs = 5
 batch_size = 100
 learning_rate = 0.005
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 # %% slideshow={"slide_type": "subslide"}
 mnist_transforms = transforms.Compose(
@@ -60,18 +64,6 @@ plt.imshow(tensor[0], cmap="binary")
 tensor, label = next(it)
 print(f"Batch shape: {tensor.shape}, label: {label}")
 plt.imshow(tensor[0], cmap="binary")
-
-# %%
-def show_dataset(ds, nrows=8, ncols=8, figsize=(12, 12)):
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
-    it = iter(ds)
-    for row in range(nrows):
-        for col in range(ncols):
-            ax = axes[row, col]
-            ax.axes.xaxis.set_visible(False)
-            ax.axes.yaxis.set_visible(False)
-            ax.imshow(next(it)[0].squeeze(0), cmap="binary")
-    plt.show()
 
 
 # %%
@@ -109,6 +101,7 @@ def create_model(hidden_size):
 def training_loop(
     n_epochs, optimizer, model, loss_fn, device, train_loader, print_progress=True
 ):
+    model = model.to(device)
     all_batch_losses = []
     for epoch in range(1, n_epochs + 1):
         accumulated_loss = 0
@@ -120,7 +113,7 @@ def training_loop(
             batch_loss = loss_fn(output, labels)
             with torch.no_grad():
                 accumulated_loss += batch_loss
-                all_batch_losses.append(batch_loss.detach())
+                all_batch_losses.append(batch_loss.detach().cpu())
 
             optimizer.zero_grad()
             batch_loss.backward()
@@ -144,9 +137,7 @@ def create_and_train_model(hidden_size, num_epochs=num_epochs, print_progress=Tr
         optimizer=optimizer,
         model=model,
         loss_fn=nn.CrossEntropyLoss(),
-        device=torch.device("cpu")
-        if torch.cuda.is_available()
-        else torch.device("cpu"),
+        device=device,
         train_loader=train_loader,
         print_progress=print_progress,
     )
@@ -157,10 +148,8 @@ def create_and_train_model(hidden_size, num_epochs=num_epochs, print_progress=Tr
 model, losses = create_and_train_model(32, num_epochs=5, print_progress=True)
 
 # %%
-from matplotlib import pyplot
-
-pyplot.figure(figsize=(16, 5))
-pyplot.plot(range(len(losses)), losses)
+plt.figure(figsize=(16, 5))
+plt.plot(range(len(losses)), losses)
 
 
 # %%
@@ -169,8 +158,8 @@ def evaluate_model(model):
     predictions = []
     with torch.no_grad():
         for x, y in test_loader:
-            new_predictions = model(x.reshape(-1, input_size))
-            predictions.extend(new_predictions.argmax(dim=1).numpy())
+            new_predictions = model(x.reshape(-1, input_size).to(device))
+            predictions.extend(new_predictions.argmax(dim=1).cpu().numpy())
             ground_truth.extend(y.numpy())
         return ground_truth, predictions
 
@@ -217,6 +206,7 @@ mlp_classifier = NeuralNetClassifier(
     lr=0.2,
     iterator_train__shuffle=True,
     train_split=predefined_split(test_dataset),
+    device=device,
 )
 
 # %%
@@ -257,6 +247,7 @@ mlp_classifier_adam = NeuralNetClassifier(
     lr=learning_rate / 10,
     iterator_train__shuffle=True,
     train_split=predefined_split(test_dataset),
+    device=device,
 )
 
 # %%
@@ -308,6 +299,8 @@ show_dataset(augmented_train_dataset, nrows=4, figsize=(12, 6))
 # %%
 mlp_classifier.fit(augmented_train_dataset, None)
 
+# %%
+mlp_classifier.partial_fit(augmented_train_dataset, None)
 
 # %% [markdown]
 # ## Workshop Fashion MNIST
