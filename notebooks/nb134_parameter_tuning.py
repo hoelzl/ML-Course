@@ -17,7 +17,6 @@
 
 # %%
 import joblib
-import matplotlib.pyplot as plt
 import numpy as np
 from pytorch_model_summary import summary
 import torch
@@ -26,18 +25,11 @@ import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as transforms
 from mlcourse.config import Config
-from mlcourse.utils.data import show_dataset
-from sklearn.metrics import (
-    ConfusionMatrixDisplay,
-    classification_report,
-    confusion_matrix,
-)
+from sklearn.metrics import classification_report
 from skorch import NeuralNetClassifier
-from skorch.callbacks import Checkpoint, EarlyStopping, LRScheduler
 from skorch.helper import predefined_split
-from torch.utils.data import Subset
 from torchvision.transforms.functional import InterpolationMode
-from sklearn.model_selection import RandomizedSearchCV, train_test_split
+from sklearn.model_selection import RandomizedSearchCV
 
 # %%
 config = Config()
@@ -149,7 +141,7 @@ cnn_classifier = NeuralNetClassifier(
     iterator_train__shuffle=True,
     train_split=predefined_split(test_dataset),
     device=device,
-    verbose=False
+    verbose=False,
 )
 
 # %%
@@ -166,11 +158,21 @@ cnn_classifier = NeuralNetClassifier(
 # %%
 cnn_classifier.fit(x_train, y_train)
 
+# %% [markdown]
+#
+# ## Parameter Search with Cross-validation
+#
+# `RandomizedSearchCV` and `GridSearchCV` are scikit-learn *estimators* that
+# perform a search for hyperparameters that lead to the best evaluation metrics.
+#
+# They use n-fold *cross-validation* to estimate the performance of each
+# setting.
+
 # %%
 search = RandomizedSearchCV(
     cnn_classifier,
-    n_iter=3, # In reality this should be much higher...
-    cv=2, # Use only two cross validation sets to save training time
+    n_iter=3,  # In reality this should be much higher...
+    cv=2,  # Use only two cross validation sets to save training time
     verbose=3,
     n_jobs=8,
     param_distributions=[
